@@ -1,4 +1,8 @@
-# inspiration: https://github.com/alexwlchan/tex-dockerfile
+# =============================================================================
+# Custom XeLaTeX Environment
+# Base: Ubuntu 22.04 | TeX Live: Latest (Dynamic)
+# Inspiration: https://github.com/alexwlchan/tex-dockerfile
+# =============================================================================
 
 FROM ubuntu:22.04
 
@@ -16,14 +20,16 @@ RUN \
   tar -xzf install-tl-unx.tar.gz && \
   export TEXLIVE_INSTALLER=$(find . -maxdepth 1 -regex ".*install-tl-[0-9]+" -type d) && \
   export YEAR=$(echo $TEXLIVE_INSTALLER | awk '{ print substr($0, 14, 4) }') && \
-  mv "${TEXLIVE_INSTALLER}" /install-tl && \
   sed -i "s/{{YEAR}}/${YEAR}/" /texlive.profile && \
   mkdir -p /usr/local/texlive/${YEAR} && \
   ln -s /usr/local/texlive/${YEAR} /usr/local/texlive/latest && \
-  fc-cache
-
-WORKDIR /install-tl
-RUN ./install-tl --profile=/texlive.profile
+  "${TEXLIVE_INSTALLER}/install-tl" --profile=/texlive.profile && \
+  rm -rf \
+    /install-tl-unx.tar.gz \
+    "${TEXLIVE_INSTALLER}" \
+    /texlive.profile \
+    /var/lib/apt/lists/* && \
+  fc-cache -f
 
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
 
