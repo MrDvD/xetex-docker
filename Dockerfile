@@ -34,7 +34,6 @@ RUN \
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
 
 RUN \
-  tlmgr update --self --all || true && \
   tlmgr install xetex fontspec geometry
 
 VOLUME ["/data"]
