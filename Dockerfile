@@ -27,14 +27,13 @@ RUN \
     "${TEXLIVE_INSTALLER}" \
     /texlive.profile \
     /var/lib/apt/lists/* && \
-  apt-get purge -y --auto-remove curl && \
   apt-get autoremove -y && \
   apt-get clean
 
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
 
 RUN \
-  tlmgr init-usertree && \
+  tlmgr update --self && \
   tlmgr install xetex fontspec geometry
 
 VOLUME ["/data"]
