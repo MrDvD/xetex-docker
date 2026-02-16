@@ -34,7 +34,8 @@ RUN \
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
 
 RUN \
-  tlmgr --verify-repo=none install xetex fontspec geometry
+  tlmgr init-usertree && \
+  tlmgr install xetex fontspec geometry
 
 VOLUME ["/data"]
 WORKDIR /data
