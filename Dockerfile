@@ -7,15 +7,13 @@
 FROM ubuntu:22.04
 
 COPY texlive.profile /texlive.profile
-COPY fonts /usr/local/share/fonts/my_fonts
 
 RUN \
   apt-get update && \
   apt-get install -y \
     curl \
     perl-modules \
-    libfontconfig1 \
-    fontconfig && \
+    libfontconfig1 && \
   curl -LO "https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz" && \
   tar -xzf install-tl-unx.tar.gz && \
   export TEXLIVE_INSTALLER=$(find . -maxdepth 1 -regex ".*install-tl-[0-9]+" -type d) && \
@@ -29,9 +27,15 @@ RUN \
     "${TEXLIVE_INSTALLER}" \
     /texlive.profile \
     /var/lib/apt/lists/* && \
-  fc-cache -f
+  apt-get remove curl && \
+  apt-get autoremove && \
+  apt-get clean
 
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
+
+RUN \
+  tlmgr update --self && \
+  tlmgr install xetex fontspec geometry
 
 VOLUME ["/data"]
 WORKDIR /data
