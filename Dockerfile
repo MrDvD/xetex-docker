@@ -27,8 +27,8 @@ RUN \
     "${TEXLIVE_INSTALLER}" \
     /texlive.profile \
     /var/lib/apt/lists/* && \
-  apt-get remove curl && \
-  apt-get autoremove && \
+  apt-get remove -y curl && \
+  apt-get autoremove -y && \
   apt-get clean
 
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
