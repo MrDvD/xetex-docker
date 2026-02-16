@@ -34,8 +34,7 @@ RUN \
 ENV PATH=/usr/local/texlive/latest/bin/x86_64-linux:$PATH
 
 RUN \
-  tlmgr option repository https://ftp.snt.utwente.nl/pub/software/tex/systems/texlive/tlnet/ && \
-  tlmgr install xetex fontspec geometry
+  tlmgr --verify-repo=none install xetex fontspec geometry
 
 VOLUME ["/data"]
 WORKDIR /data
