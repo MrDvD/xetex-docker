@@ -6,6 +6,7 @@ on:
       - 'Dockerfile'
       - 'fonts/'
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   push_to_registry:
@@ -30,10 +31,17 @@ jobs:
         run: echo "owner=${OWNER,,}" >> $GITHUB_OUTPUT
         env:
           OWNER: '${{ github.repository_owner }}'
+      
+      - name: Get TeX Live Year
+        id: get_year
+        run: |
+          YEAR=$(curl -sI https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz | grep -oP 'install-tl-\K20\d{2}' || date +%Y)
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ steps.get_owner.outputs.owner }}/xetex-base:latest
+          tags: |
+            ghcr.io/${{ steps.get_owner.outputs.owner }}/xetex-base:${{ steps.get_year.outputs.year }}
