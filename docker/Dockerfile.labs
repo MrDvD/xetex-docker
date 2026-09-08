@@ -27,5 +27,6 @@ RUN \
     biber \
     biblatex-gost \
     float \
-    listings && \
+    listings \
+    amsmath && \
   apt-get clean
