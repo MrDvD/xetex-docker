@@ -3,18 +3,119 @@ name: Publish Docker Image
 on:
   push:
     paths:
-      - 'Dockerfile'
-      - 'fonts/'
+      - 'docker/Dockerfile*'
     branches: [main]
   workflow_dispatch:
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to GHCR
+  find_dockerfiles:
+    name: Find Dockerfiles in Order
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set_matrix.outputs.matrix }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Read Dockerfile order
+        id: set_matrix
+        run: |
+          ORDER_FILE=".dockerbuildorder"
+          DECLARED_FILES=()
+
+          # 1. Read files listed in .dockerbuildorder
+          if [ -f "$ORDER_FILE" ]; then
+            while IFS= read -r line || [ -n "$line" ]; do
+              [[ -z "$line" || "$line" =~ ^# ]] && continue
+              [ -f "$line" ] && DECLARED_FILES+=("$line")
+            done < "$ORDER_FILE"
+          fi
+
+          # 2. Append any unlisted Dockerfiles found in docker/
+          ALL_FILES=$(ls docker/Dockerfile* 2>/dev/null || true)
+          for f in $ALL_FILES; do
+            if [[ ! " ${DECLARED_FILES[*]} " =~ " ${f} " ]]; then
+              DECLARED_FILES+=("$f")
+            fi
+          done
+
+          # 3. Convert array to JSON matrix
+          MATRIX_JSON=$(printf '%s\n' "${DECLARED_FILES[@]}" | jq -R . | jq -s -c .)
+          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+  
+  plan_push_to_registry:
+    name: Plan Push to Registry
+    needs: find_dockerfiles
+    if: ${{ github.event.act }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    strategy:
+      max-parallel: 1
+      matrix:
+        file: ${{ fromJSON(needs.find_dockerfiles.outputs.matrix) }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Set lowercase owner name
+        id: get_owner
+        run: echo "owner=${OWNER,,}" >> $GITHUB_OUTPUT
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
+      - name: Get TeX Live Year
+        id: get_year
+        run: |
+          YEAR=$(curl -sI https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz | grep -oP 'install-tl-\K20\d{2}' || date +%Y)
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+
+      - name: Determine tag names
+        id: get_tag
+        run: |
+          FILENAME=$(basename "${{ matrix.file }}")
+          # Extract suffix after Dockerfile. (e.g., Dockerfile.base -> base)
+          SUFFIX="${FILENAME#Dockerfile}"
+          SUFFIX="${SUFFIX#.}"
+
+          YEAR="${{ steps.get_year.outputs.year }}"
+          OWNER="${{ steps.get_owner.outputs.owner }}"
+          REGISTRY="ghcr.io/${OWNER}"
+
+          if [ -z "$SUFFIX" ]; then
+            # Default Dockerfile: tags are xetex-base:2026 and xetex-base:latest
+            TAGS="${REGISTRY}/xetex-base:${YEAR}
+          ${REGISTRY}/xetex-base:latest"
+          else
+            # Dockerfile.base: tags are xetex-base:base-2026 and xetex-base:base
+            TAGS="${REGISTRY}/xetex-base:${SUFFIX}-${YEAR}
+          ${REGISTRY}/xetex-base:${SUFFIX}"
+          fi
+
+          # Output multiline string to GITHUB_OUTPUT
+          {
+            echo "tags<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Echo file and tags
+        run: |
+          echo "File: ${{ matrix.file }}"
+          echo "Tags: ${{ steps.get_tag.outputs.tags }}"
+
+  push_to_registry:
+    name: Push Docker image
+    needs: find_dockerfiles
+    if: ${{ !github.event.act }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      matrix:
+        file: ${{ fromJSON(needs.find_dockerfiles.outputs.matrix) }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -25,23 +126,52 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Set lowercase owner name
         id: get_owner
         run: echo "owner=${OWNER,,}" >> $GITHUB_OUTPUT
         env:
           OWNER: '${{ github.repository_owner }}'
-      
+
       - name: Get TeX Live Year
         id: get_year
         run: |
           YEAR=$(curl -sI https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz | grep -oP 'install-tl-\K20\d{2}' || date +%Y)
           echo "year=$YEAR" >> $GITHUB_OUTPUT
 
+      - name: Determine tag names
+        id: get_tag
+        run: |
+          FILENAME=$(basename "${{ matrix.file }}")
+          # Extract suffix after Dockerfile. (e.g., Dockerfile.base -> base)
+          SUFFIX="${FILENAME#Dockerfile}"
+          SUFFIX="${SUFFIX#.}"
+
+          YEAR="${{ steps.get_year.outputs.year }}"
+          OWNER="${{ steps.get_owner.outputs.owner }}"
+          REGISTRY="ghcr.io/${OWNER}"
+
+          if [ -z "$SUFFIX" ]; then
+            # Default Dockerfile: tags are xetex-base:2026 and xetex-base:latest
+            TAGS="${REGISTRY}/xetex-base:${YEAR}
+          ${REGISTRY}/xetex-base:latest"
+          else
+            # Dockerfile.base: tags are xetex-base:base-2026 and xetex-base:base
+            TAGS="${REGISTRY}/xetex-base:${SUFFIX}-${YEAR}
+          ${REGISTRY}/xetex-base:${SUFFIX}"
+          fi
+
+          # Output multiline string to GITHUB_OUTPUT
+          {
+            echo "tags<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.file }}
           push: true
-          tags: |
-            ghcr.io/${{ steps.get_owner.outputs.owner }}/xetex-base:${{ steps.get_year.outputs.year }}
+          tags: ${{ steps.get_tag.outputs.tags }}
