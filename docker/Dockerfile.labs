@@ -4,7 +4,7 @@
 # Purpose: Compiling generic reports for laboratory works
 # =============================================================================
 
-FROM ghcr.io/mrdvd/xetex-base:base-2026
+FROM ghcr.io/mrdvd/xetex-base:base
 
 RUN \
   apt-get update && \
