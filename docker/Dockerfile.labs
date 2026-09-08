@@ -4,7 +4,7 @@
 # Purpose: Compiling generic reports for laboratory works
 # =============================================================================
 
-FROM ghcr.io/mrdvd/xetex-base:base
+FROM ghcr.io/mrdvd/xetex-base:base-2026
 
 RUN \
   apt-get update && \
@@ -28,5 +28,10 @@ RUN \
     biblatex-gost \
     float \
     listings \
-    amsmath && \
+    amsmath \
+    amscls \
+    enumitem \
+    tabularx \
+    tools \
+    multirow && \
   apt-get clean
