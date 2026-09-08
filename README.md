@@ -8,7 +8,7 @@ Docker-образы для сборки документов LaTeX с помощ
 
 - `base` — Ubuntu 22.04 и актуальная версия TeX Live, устанавливаемая
 	во время сборки. В базовый набор входят `xetex`, `fontspec` и `geometry`.
-- `labs` — образ на основе `ghcr.io/mrdvd/xetex-base:base-2026`.
+- `labs` — образ на основе `ghcr.io/mrdvd/xetex-docker:base-2026`.
 	Дополнительно устанавливает `make`, шрифты CMU, русскую локализацию,
 	`hyperref`, `listings`, `biblatex`, `biber`, `biblatex-gost` и другие пакеты,
 	необходимые для лабораторных работ.
