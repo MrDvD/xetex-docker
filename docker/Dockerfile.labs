@@ -31,7 +31,6 @@ RUN \
     amsmath \
     amscls \
     enumitem \
-    tabularx \
     tools \
     multirow && \
   apt-get clean
