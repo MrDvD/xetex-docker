@@ -32,5 +32,6 @@ RUN \
     amscls \
     enumitem \
     tools \
-    multirow && \
+    multirow \
+    tabularray && \
   apt-get clean
