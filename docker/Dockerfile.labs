@@ -33,5 +33,6 @@ RUN \
     enumitem \
     tools \
     multirow \
-    tabularray && \
+    tabularray \
+    varwidth && \
   apt-get clean
