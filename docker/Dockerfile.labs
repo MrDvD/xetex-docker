@@ -33,5 +33,7 @@ RUN \
     enumitem \
     tabularx \
     tools \
-    multirow && \
+    multirow \
+    minted \
+    caption && \
   apt-get clean
