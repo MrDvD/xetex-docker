@@ -31,9 +31,10 @@ RUN \
     amsmath \
     amscls \
     enumitem \
-    tabularx \
     tools \
     multirow \
+    tabularray \
+    varwidth \
     minted \
     caption && \
   apt-get clean
