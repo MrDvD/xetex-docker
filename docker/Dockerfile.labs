@@ -34,5 +34,7 @@ RUN \
     tools \
     multirow \
     tabularray \
-    varwidth && \
+    varwidth \
+    minted \
+    caption && \
   apt-get clean
