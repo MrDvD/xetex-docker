@@ -36,5 +36,6 @@ RUN \
     tabularray \
     varwidth \
     minted \
-    caption && \
+    caption \
+    infwarerr && \
   apt-get clean
