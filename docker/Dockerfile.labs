@@ -38,5 +38,7 @@ RUN \
     minted \
     caption \
     infwarerr \
-    adjustbox && \
+    adjustbox \
+    pdfpages \
+    && \
   apt-get clean
